@@ -1,5 +1,6 @@
 setwd("C:/Users/dudea/Desktop/Ryerson/CKME 136 Capstone Project/data analisys surface/fireFighters")
 
+
 file_list <- list.files()
 file_list
 
@@ -9,6 +10,10 @@ economics <- read.csv("WB-Economics.csv" , header = TRUE)
 environment<- read.csv("WB-Environment.csv" , header = TRUE)
 demographics <- read.csv("WB-Economics.csv" , header = TRUE)
 culture <- read.csv("WB-Culture.csv" , header = TRUE)
+transportation <- read.csv("WB-Transportation.csv" , header = TRUE)
+civics <- read.csv("WB-Civics.csv" , header = TRUE)
+health <- read.csv("WB-Health.csv" , header = TRUE)
+education <- read.csv("WB-Education.csv" , header = TRUE)
 pop_change <- read.csv("Wellbeing_TO_2016 Census_Total Pop_Total Change.csv" , header = TRUE)
 
 head(safety)
@@ -17,6 +22,10 @@ head(economics)
 head(environment)
 head(demographics)
 head(culture)
+head(transportation)
+head(civics)
+head(health)
+head(education)
 head(pop_change)
 
 sapply(safety, class)
@@ -25,6 +34,10 @@ sapply(economics, class)
 sapply(environment, class)
 sapply(demographics, class)
 sapply(culture, class)
+sapply(transportation, class)
+sapply(civics, class)
+sapply(health, class)
+sapply(education, class)
 sapply(pop_change, class)
 
 summary(safety)
@@ -33,6 +46,10 @@ summary(economics)
 summary(environment)
 summary(demographics)
 summary(culture)
+summary(transportation)
+summary(civics)
+summary(health)
+summary(education)
 summary(pop_change)
 pop_names <- list("Neighbourhood.Id","Neighbourhood","Pop2016","Pop2011","PopChg11t16")
 names(pop_change)<- pop_names
@@ -51,9 +68,14 @@ neighborhood_merged <- merge(neighborhood_merged,economics, by = c("Neighbourhoo
 neighborhood_merged <- merge(neighborhood_merged,environment, by = c("Neighbourhood", "Neighbourhood.Id"))
 neighborhood_merged <- merge(neighborhood_merged,demographics, by = c("Neighbourhood", "Neighbourhood.Id"))
 neighborhood_merged <- merge(neighborhood_merged,culture, by = c("Neighbourhood", "Neighbourhood.Id"))
+neighborhood_merged <- merge(neighborhood_merged,transportation, by = c("Neighbourhood", "Neighbourhood.Id"))
+neighborhood_merged <- merge(neighborhood_merged,civics, by = c("Neighbourhood", "Neighbourhood.Id"))
+neighborhood_merged <- merge(neighborhood_merged,health, by = c("Neighbourhood", "Neighbourhood.Id"))
+neighborhood_merged <- merge(neighborhood_merged,education, by = c("Neighbourhood", "Neighbourhood.Id"))
 neighborhood_merged <- merge(neighborhood_merged,pop_change, by = c("Neighbourhood.Id"))
 
 str(neighborhood_merged)
+names(neighborhood_merged)
 
 ##### CLEANING unnecessary / repeated columns
 neighborhood_merged$X <- NULL
@@ -66,6 +88,8 @@ neighborhood_merged$Local.Employment.y <- NULL
 neighborhood_merged$Child.Care.Spaces.y <- NULL
 neighborhood_merged$Businesses.y <- NULL
 
+names(neighborhood_merged)
+
 #####CLEANING Changing names to eliminate the names resulting from merging
 colnames(neighborhood_merged)[2] <- "Neighborhood"
 colnames(neighborhood_merged)[25] <- "Businesses"
@@ -73,6 +97,8 @@ colnames(neighborhood_merged)[26] <- "Child.Care.Spaces"
 colnames(neighborhood_merged)[27] <- "Debt.Risk.Score"
 colnames(neighborhood_merged)[28] <- "Local.Employment"
 colnames(neighborhood_merged)[29] <- "Social.Assistance.Recipients"
+
+names(neighborhood_merged)
 
 ##### This loop assigns a new column called class that will be used in classification
 for (i in 1:nrow(neighborhood_merged)){
@@ -88,6 +114,7 @@ for (i in 1:nrow(neighborhood_merged)){
 ##### turns the characters into factor
 neighborhood_merged$class = factor(neighborhood_merged$class, levels = c("Low","Medium","High"))
 levels(neighborhood_merged$class)
+table(neighborhood_merged$class)
 
 ##### Writes a csv file for use outside R
 write.csv(neighborhood_merged, file = "neighborhood_merged.csv", sep = ",", col.names = TRUE )
