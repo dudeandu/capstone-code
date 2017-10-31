@@ -6,8 +6,8 @@ setwd("C:/Users/dudea/Desktop/Ryerson/CKME 136 Capstone Project/data analisys su
 file_list <- list.files()
 file_list
 
-### reading 2016
-doc <- xmlTreeParse(file_list[4],useInternal=TRUE)
+### reading 2011
+doc <- xmlTreeParse(file_list[3],useInternal=TRUE)
 rootNode <- xmlRoot(doc)
 
 ### INCIDENTS total
@@ -18,7 +18,8 @@ length(names(rootNode))
 ### incident Attributes
 names(rootNode[[1]])
 incident_attr <- names(rootNode[[1]])
-incident_attr[[103]]
+length(incident_attr)
+incident_attr[[101]]
 
 ### this for loop extracts all the attribute names as character
 for(i in 1:length(incident_attr)) {
@@ -26,7 +27,6 @@ for(i in 1:length(incident_attr)) {
 }
 
 #### loop creates a list of names for every attribute, in the correct order
-
 att_names <- NULL
 for(i in 1:length(incident_attr)) {
   att_names <- c(att_names,incident_attr[[i]])
@@ -75,18 +75,29 @@ tor_incident_attr$INJURIES <- ifelse(
 
 sum(tor_incident_attr$INJURIES)
 
-
+#### test of attribute names and values
 head(tor_incident_attr)
+
+###exports data frame to a csv file
+write.csv(tor_incident_attr, file = "fire_incidents_2016.csv", sep = ",", col.names = TRUE )
+
+######################## INDIVIDUAL INCIDENTS / INTERESTING INFO
+
 sapply(tor_incident_attr,class)
 
 table(tor_incident_attr$EVENT_TYPE)
 table(tor_incident_attr$BLD_HEIGHT)
 table(tor_incident_attr$AGE_OF_STRUCTURE)
-
-write.csv(tor_incident_attr, file = "fire_incidents_2016.csv", sep = ",", col.names = TRUE )
-
-######################## INDIVIDUAL INCIDENTS / INTERESTING INFO
 xpathSApply(rootNode,"//INCIDENT",xmlValue)
 xpathSApply(rootNode,"rootNode[@OBJECT_OR_MATERIAL_FIRST_IGNITED='55']",xmlValue)
 xpathSApply(rootNode,"//EST_LOSS", xmlValue) ###### <- yeah!!!
 sum(as.numeric(xpathSApply(rootNode,"//EST_LOSS", xmlValue))) #<<< est. loss to fire 
+
+## maximum number of personnel deployed to incident
+max(as.integer(xpathSApply(rootNode,"//TOTAL_NUM_PERSONNEL",xmlValue)))
+
+## maximum number of injuries on one incident
+max(as.numeric(xpathSApply(rootNode,"//FF_INJURIES",xmlValue)))
+
+###### ESTIMATED LOSS from ???
+sum(as.numeric(xpathSApply(rootNode,"//EST_LOSS", xmlValue)))
