@@ -1,0 +1,372 @@
+## install.packages("XML")
+## install.packages("dplyr")
+require(XML)
+require(dplyr)
+
+setwd("C:/Users/dudea/Desktop/Ryerson/CKME 136 Capstone Project/data analisys surface/fireFighters/data/TFS_OPEN_DATA-2011-2016")
+
+file_list <- list.files()
+file_list
+
+### reading xml
+doc2011 <- xmlTreeParse("TFS_OPEN_DATA-2011.xml",useInternal=TRUE)
+doc2012 <- xmlTreeParse("TFS_OPEN_DATA-2012.xml",useInternal=TRUE)
+doc2013 <- xmlTreeParse("TFS_OPEN_DATA-2013.xml",useInternal=TRUE)
+doc2014 <- xmlTreeParse("TFS_OPEN_DATA-2014.xml",useInternal=TRUE)
+doc2015 <- xmlTreeParse("TFS_OPEN_DATA-2015.xml",useInternal=TRUE)
+doc2016 <- xmlTreeParse("TFS_OPEN_DATA-2016.xml",useInternal=TRUE)
+
+rootNode2011 <- xmlRoot(doc2011)
+rootNode2012 <- xmlRoot(doc2012)
+rootNode2013 <- xmlRoot(doc2013)
+rootNode2014 <- xmlRoot(doc2014)
+rootNode2015 <- xmlRoot(doc2015)
+rootNode2016 <- xmlRoot(doc2016)
+
+##### rootnode list
+rn_list <- list(rootNode2011, 
+                rootNode2012, 
+                rootNode2013, 
+                rootNode2014, 
+                rootNode2015, 
+                rootNode2016)
+
+#########################################################################
+#########################################################################
+#########################################################################
+#########################################################################
+#########################################################################
+#########################################################################
+###This reads from the previously exported dataframes created at the bottom of this script 
+tor_incident_attr2011 <- read.csv(file = "fire_incidents_2011.csv", header = TRUE)
+tor_incident_attr2012 <- read.csv(file = "fire_incidents_2012.csv", header = TRUE)
+tor_incident_attr2013 <- read.csv(file = "fire_incidents_2013.csv", header = TRUE)
+tor_incident_attr2014 <- read.csv(file = "fire_incidents_2014.csv", header = TRUE)
+tor_incident_attr2015 <- read.csv(file = "fire_incidents_2015.csv", header = TRUE)
+tor_incident_attr2016 <- read.csv(file = "fire_incidents_2016.csv", header = TRUE)
+
+sum(sapply(tor_incident_attr2012,class) != sapply(tor_incident_attr2011,class))
+length(tor_incident_attr2012)
+
+#########################################################################
+#########################################################################
+#########################################################################
+#########################################################################
+#########################################################################
+
+#### total incidents for all years
+total_incidents <- length(names(rootNode2011))+length(names(rootNode2012))+length(names(rootNode2013))+length(names(rootNode2014))+length(names(rootNode2015))+length(names(rootNode2016))
+total_incidents
+
+### incident Attributes
+names(rootNode[[1]])
+incident_attr <- names(rootNode2011[[1]])
+length(incident_attr)
+incident_attr[[101]]
+
+### this for loop extracts all the attribute names as character
+for(i in 1:length(incident_attr)) {
+  print(incident_attr[[i]])
+}
+
+#### loop creates a list of names for every attribute, in the correct order
+att_names <- NULL
+for(i in 1:length(incident_attr)) {
+  att_names <- c(att_names,incident_attr[[i]])
+  print(incident_attr[[i]])
+}
+
+length(att_names)
+
+### this variable creates a sequence to identifiy the rownumber/incidentnumber
+datrows <- seq(1,length(names(rootNode2011)))
+
+
+##### creating a data frame with all the incidents from every year
+tor_incident_attr2011 <- data.frame(CASE_NUMBER = seq(1,length(names(rootNode2011))))
+tor_incident_attr2012 <- data.frame(CASE_NUMBER = seq(1,length(names(rootNode2012))))
+tor_incident_attr2013 <- data.frame(CASE_NUMBER = seq(1,length(names(rootNode2013))))
+tor_incident_attr2014 <- data.frame(CASE_NUMBER = seq(1,length(names(rootNode2014))))
+tor_incident_attr2015 <- data.frame(CASE_NUMBER = seq(1,length(names(rootNode2015))))
+tor_incident_attr2016 <- data.frame(CASE_NUMBER = seq(1,length(names(rootNode2016))))
+
+df_list <- list(tor_incident_attr2011, 
+                tor_incident_attr2012, 
+                tor_incident_attr2013, 
+                tor_incident_attr2014, 
+                tor_incident_attr2015, 
+                tor_incident_attr2016)
+
+length(df_list)
+
+
+################################# WARNING!!!
+######################## this loop takes 30+ minutes to complete
+######################## and creates dataframes that use 500++ MB of RAM
+for(j in 1:length(df_list)) {    
+  for(i in 1:(length(incident_attr)-1)) {
+    print(incident_attr[[i]])
+    columni <- xpathSApply(rn_list[[j]],paste("//", incident_attr[[i]], sep = ""),xmlValue)
+    print(class(columni))
+    columni[which(columni == "")] <- NA
+    # print(length(columni))
+    df_list[[j]] <- cbind(df_list[[j]],columni)
+    print(i)
+  }
+  print(j)
+}
+
+#####3Changing all names of attributes to propper ones
+for(i in 1:length(df_list)){
+  names(df_list[[i]]) <- c("row_number", att_names[1:length(incident_attr)-1])
+}
+
+
+####in case there is need to add the year to all rows for future merging
+###### creating a column with the year
+for (i in 1:length(df_list)){
+  df_list[[i]]$YEAR <- as.numeric(paste("201",i,sep = ""))
+  print(as.numeric(paste("201",i, sep = "")))  
+}
+
+##### creating an injury column for cases where there is firefighter or civilian injury / death
+for (i in 1:length(df_list)){
+  df_list[[i]]$FF_INJURIES <- as.numeric(as.character(df_list[[i]]$FF_INJURIES))
+  df_list[[i]]$FF_FATALITIES <- as.numeric(as.character(df_list[[i]]$FF_FATALITIES))
+  df_list[[i]]$CIVILIAN_FIRE_INJURY <- as.numeric(as.character(df_list[[i]]$CIVILIAN_FIRE_INJURY))
+  df_list[[i]]$CIVILIAN_FIRE_FATALITY <- as.numeric(as.character(df_list[[i]]$CIVILIAN_FIRE_FATALITY))
+  
+  df_list[[i]]$INJURIES <- ifelse(
+    df_list[[i]]$FF_INJURIES > 0 | df_list[[i]]$FF_FATALITIES > 0 | 
+      df_list[[i]]$CIVILIAN_FIRE_INJURY > 0 |
+      df_list[[i]]$CIVILIAN_FIRE_FATALITY > 0, 1, 0) 
+}
+
+
+sum(df_list[[i]]$INJURIES)
+
+##################################################################
+##################################################################
+##################################################################
+#### making a column with dispatch difference (arrival date - dispatch date)
+
+for (i in 1:length(df_list)){
+  ####### turn factor into character 
+  df_list[[i]]$DISPATCH_DATE <- as.character(df_list[[i]]$DISPATCH_DATE)
+  df_list[[i]]$ARRIVE_DATE <- as.character(df_list[[i]]$ARRIVE_DATE)
+  
+  ####### eliminate empty spaces and turn them into NAs
+  df_list[[i]]$ARRIVE_DATE[which(df_list[[i]]$ARRIVE_DATE == "")] <- NA
+  df_list[[i]]$DISPATCH_DATE[which(df_list[[i]]$DISPATCH_DATE == "")] <- NA
+  
+  ####### turn factor into date (POSIXct)
+  df_list[[i]]$DISPATCH_DATE <- as.POSIXct(df_list[[i]]$DISPATCH_DATE)
+  df_list[[i]]$ARRIVE_DATE <- as.POSIXct(df_list[[i]]$ARRIVE_DATE)
+  
+  ####### substract dispatch from arrival to get a total dispatch time in seconds 
+  ####### and create a column called difference with that subtraction
+  df_list[[i]]$DISPATCH_TIME = df_list[[i]]$ARRIVE_DATE - df_list[[i]]$DISPATCH_DATE
+  
+  ###### eliminating outliers, and false instances
+  df_list[[i]]$DISPATCH_TIME[which(df_list[[i]]$DISPATCH_TIME <= 0)] <- NA
+  #df_list[[i]]$DISPATCH_TIME[which(df_list[[i]]$DISPATCH_TIME >= 300)] <- NA
+  
+  print(i)
+  print(head(df_list[[i]]$DISPATCH_TIME))
+}
+
+for (i in 1:length(df_list)){
+  print(summary(as.numeric(df_list[[i]]$DISPATCH_TIME)))
+}
+
+for (i in 1:length(df_list)){
+  print(summary(as.numeric(df_list[[i]]$INJURIES)))
+}
+
+#### Assigning each dataset to an individual dataset outside the list
+tor_incident_attr2011 <- df_list[[1]]
+tor_incident_attr2012 <- df_list[[2]]
+tor_incident_attr2013 <- df_list[[3]]
+tor_incident_attr2014 <- df_list[[4]]
+tor_incident_attr2015 <- df_list[[5]]
+tor_incident_attr2016 <- df_list[[6]]
+
+rm(df_list)
+
+###########################################################
+###########################################################
+###### subseting all instances with injuries to one dataset
+injury_cases <- tor_incident_attr2011[which(tor_incident_attr2011$INJURIES>0), ]
+injury_cases <- rbind(injury_cases,tor_incident_attr2012[which(tor_incident_attr2012$INJURIES>0), ])
+injury_cases <- rbind(injury_cases,tor_incident_attr2013[which(tor_incident_attr2013$INJURIES>0), ])
+injury_cases <- rbind(injury_cases,tor_incident_attr2014[which(tor_incident_attr2014$INJURIES>0), ])
+injury_cases <- rbind(injury_cases,tor_incident_attr2015[which(tor_incident_attr2015$INJURIES>0), ])
+injury_cases <- rbind(injury_cases,tor_incident_attr2016[which(tor_incident_attr2016$INJURIES>0), ])
+
+
+nrow(injury_cases[which(injury_cases$YEAR==2011), ])
+sum(complete.cases(injury_cases))
+
+injury_events <- arrange(as.data.frame(table(injury_cases$EVENT_TYPE)), desc(Freq))
+names(injury_events) <- c("EVENT_TYPE","INJURIES")
+
+#### exports a csv file with injury cases only 
+write.csv(injury_cases, file = "fire_incidents_injury_cases_all_years_all_rows.csv", sep = ",", col.names = TRUE )
+
+#########################################################
+#########################################################
+###### subseting all instances with non-medical responses
+nonmedical_cases <- tor_incident_attr2011[which(tor_incident_attr2011$EVENT_TYPE!="Medical"), ]
+nonmedical_cases <- rbind(nonmedical_cases,tor_incident_attr2012[which(tor_incident_attr2012$EVENT_TYPE!="Medical"), ])
+nonmedical_cases <- rbind(nonmedical_cases,tor_incident_attr2013[which(tor_incident_attr2013$EVENT_TYPE!="Medical"), ])
+nonmedical_cases <- rbind(nonmedical_cases,tor_incident_attr2014[which(tor_incident_attr2014$EVENT_TYPE!="Medical"), ])
+nonmedical_cases <- rbind(nonmedical_cases,tor_incident_attr2015[which(tor_incident_attr2015$EVENT_TYPE!="Medical"), ])
+nonmedical_cases <- rbind(nonmedical_cases,tor_incident_attr2016[which(tor_incident_attr2016$EVENT_TYPE!="Medical"), ])
+
+nrow(nonmedical_cases[which(nonmedical_cases$YEAR==2011), ])
+sum(complete.cases(nonmedical_cases))
+
+arrange(as.data.frame(table(nonmedical_cases$EVENT_TYPE[which(nonmedical_cases$INJURIES>0)])), desc(Freq))
+
+nonmedical_events <- arrange(as.data.frame(table(nonmedical_cases$EVENT_TYPE)), desc(Freq))
+names(nonmedical_events) <- c("EVENT_TYPE","INCIDENTS")
+
+#### exports a csv file with only non-medical cases only 
+write.csv(nonmedical_cases, file = "fire_incidents_nonmedical_cases_all_years_all_rows.csv", sep = ",", col.names = TRUE )
+
+
+#################################################
+################################################
+
+### merging nonmedical event and injury events
+merge(nonmedical_events,injury_events, by = "EVENT_TYPE")
+
+######## correlation test
+cor.test(nonmedical_events$INCIDENTS,injury_events$INJURIES)
+
+######merging injury events, and frequency of non-medical events into a data frame
+nonmed_injury_freq <- merge(nonmedical_events,injury_events, by = "EVENT_TYPE")
+
+##### a percentage of events that have injuries
+###merge(nonmedical_events,injury_events, by = "EVENT_TYPE")[,2]/(merge(nonmedical_events,injury_events, by = "EVENT_TYPE")[,3]*100)
+nonmed_injury_freq$PERCENTAGE_INJURY <- nonmed_injury_freq$INJURIES/nonmed_injury_freq$INCIDENTS
+
+for (i in 1:nrow(nonmed_injury_freq)){
+  if(nonmed_injury_freq$PERCENTAGE_INJURY[i] == Inf){
+    nonmed_injury_freq$PERCENTAGE_INJURY[i] <- 0
+  }
+  ###print(i)
+}
+
+summary(nonmed_injury_freq$PERCENTAGE_INJURY)
+plot(nonmed_injury_freq$PERCENTAGE_INJURY)
+
+
+#################################################
+################################################# 
+################################################# 
+################################################# 
+################################################# 
+################################################# 
+
+class(tor_incident_attr2011$EVENT_TYPE, tor_incident_attr2012$EVENT_TYPE)
+
+table(tor_incident_attr2011$RESPONSE_TYPE)
+table(tor_incident_attr2011$FD_STATION) #### <<<<< maybe a mistake
+table(tor_incident_attr2011$AID_TO_FROM_OTHER_DEPTS)
+summary(as.numeric(tor_incident_attr2011$EST_KM))
+
+table(tor_incident_attr2011$EVENT_TYPE[which(tor_incident_attr2011$INJURIES>0)])
+
+####### non-Medical responses
+as.data.frame(table(tor_incident_attr2011$EVENT_TYPE[which(tor_incident_attr2011$EVENT_TYPE!= "Medical")]))
+table(tor_incident_attr2011$RESPONSE_TYPE[which(tor_incident_attr2011$INJURIES>0)])
+table(tor_incident_attr2011$PROPERTY[which(tor_incident_attr2011$INJURIES>0)])
+table(tor_incident_attr2011$IGNITION_SOURCE[which(tor_incident_attr2011$INJURIES>0)])
+
+as.data.frame(tor_incident_attr2011$EST_LOSS[which(tor_incident_attr2011$INJURIES>0)])
+
+####################################################################################################
+####################################################################################################
+####################################################################################################
+####################################################################################################
+
+########### Proof that there is money in prevention
+########### these are only cases with injuries or death
+sum(
+  sum(as.numeric(as.character(tor_incident_attr2011$EST_LOSS[which(tor_incident_attr2011$INJURIES>0)]))),
+  sum(as.numeric(as.character(tor_incident_attr2012$EST_LOSS[which(tor_incident_attr2012$INJURIES>0)]))),
+  sum(as.numeric(as.character(tor_incident_attr2013$EST_LOSS[which(tor_incident_attr2013$INJURIES>0)]))),
+  sum(as.numeric(as.character(tor_incident_attr2014$EST_LOSS[which(tor_incident_attr2014$INJURIES>0)]))),
+  sum(as.numeric(as.character(tor_incident_attr2015$EST_LOSS[which(tor_incident_attr2015$INJURIES>0)]))),
+  sum(as.numeric(as.character(tor_incident_attr2016$EST_LOSS[which(tor_incident_attr2016$INJURIES>0)])))
+)
+
+as.data.frame(table(tor_incident_attr2011$MAIN_STREET[which(tor_incident_attr2011$INJURIES>0 & tor_incident_attr2011$EST_LOSS==0)]))
+
+####################################################################################################
+####################################################################################################
+####################################################################################################
+####################################################################################################
+############### testing time as a factor of influence to injury
+
+plot(tor_incident_attr2011$DISPATCH_TIME, col = ifelse(tor_incident_attr2011$INJURIES > 0,'red','green'), ylim = c(0, 1000))
+
+plot(tor_incident_attr2011$DISPATCH_TIME[which(tor_incident_attr2011$EVENT_TYPE!= "Medical")], 
+     ylab = "time on non medical incidents" , 
+     col = ifelse(tor_incident_attr2011$INJURIES > 0,'red','green'),
+     pch= ifelse(tor_incident_attr2011$INJURIES > 0,'-','.'), 
+     ylim = c(0, 1000)
+     )
+
+plot(tor_incident_attr2012$DISPATCH_TIME[which(tor_incident_attr2012$EVENT_TYPE!= "Medical")], 
+     ylab = "time on non medical incidents" , 
+     col = ifelse(tor_incident_attr2012$INJURIES > 0,'red','green'),
+     pch= ifelse(tor_incident_attr2012$INJURIES > 0,'-','.'), 
+     ylim = c(0, 1000)
+     
+)
+plot(tor_incident_attr2013$DISPATCH_TIME[which(tor_incident_attr2013$EVENT_TYPE!= "Medical")], 
+     ylab = "time on non medical incidents" , 
+     col = ifelse(tor_incident_attr2013$INJURIES > 0,'red','green'),
+     pch= ifelse(tor_incident_attr2013$INJURIES > 0,'-','.'), 
+     ylim = c(0, 1000)
+)
+
+plot(tor_incident_attr2014$DISPATCH_TIME[which(tor_incident_attr2014$EVENT_TYPE!= "Medical")], 
+     ylab = "time on non medical incidents" , 
+     col = ifelse(tor_incident_attr2014$INJURIES > 0,'red','green'),
+     pch= ifelse(tor_incident_attr2014$INJURIES > 0,'-','.'), 
+     ylim = c(0, 1000)
+     
+)
+
+plot(tor_incident_attr2015$DISPATCH_TIME[which(tor_incident_attr2015$EVENT_TYPE!= "Medical")], 
+     ylab = "time on non medical incidents" , 
+     col = ifelse(tor_incident_attr2015$INJURIES > 0,'red','green'),
+     pch= ifelse(tor_incident_attr2015$INJURIES > 0,'-','.'), 
+     ylim = c(0, 1000)
+     
+)
+
+plot(tor_incident_attr2016$DISPATCH_TIME[which(tor_incident_attr2016$EVENT_TYPE!= "Medical")], 
+     ylab = "time on non medical incidents" , 
+     col = ifelse(tor_incident_attr2016$INJURIES > 0,'red','green'),
+     pch= ifelse(tor_incident_attr2016$INJURIES > 0,'-','.'), 
+     ylim = c(0, 1000)
+     
+)
+
+cor.test(as.numeric(tor_incident_attr2011$DISPATCH_TIME), as.numeric(tor_incident_attr2012$DISPATCH_TIME))
+
+####################################################################################################
+####################################################################################################
+####################################################################################################
+####################################################################################################
+###exports data all frame to csv files so that they can be imported later. 
+write.csv(tor_incident_attr2011, file = "fire_incidents_2011.csv", sep = ",", col.names = TRUE )
+write.csv(tor_incident_attr2012, file = "fire_incidents_2012.csv", sep = ",", col.names = TRUE )
+write.csv(tor_incident_attr2013, file = "fire_incidents_2013.csv", sep = ",", col.names = TRUE )
+write.csv(tor_incident_attr2014, file = "fire_incidents_2014.csv", sep = ",", col.names = TRUE )
+write.csv(tor_incident_attr2015, file = "fire_incidents_2015.csv", sep = ",", col.names = TRUE )
+write.csv(tor_incident_attr2016, file = "fire_incidents_2016.csv", sep = ",", col.names = TRUE )
