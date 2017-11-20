@@ -261,6 +261,10 @@ for (i in 1:nrow(nonmed_injury_freq)){
 summary(nonmed_injury_freq$PERCENTAGE_INJURY)
 plot(nonmed_injury_freq$PERCENTAGE_INJURY)
 
+arrange(nonmed_injury_freq, desc(INCIDENTS)) #<<<<<<<<<<<<<<<<<<< SHOW THIS GUY IN A CHART
+plot(nonmed_injury_freq$PERCENTAGE_INJURY)
+
+write.csv(arrange(nonmed_injury_freq, desc(INCIDENTS)), "nonmed_injury_freq_by_event_type.csv")
 
 #################################################
 ################################################# 
@@ -284,7 +288,64 @@ table(tor_incident_attr2011$RESPONSE_TYPE[which(tor_incident_attr2011$INJURIES>0
 table(tor_incident_attr2011$PROPERTY[which(tor_incident_attr2011$INJURIES>0)])
 table(tor_incident_attr2011$IGNITION_SOURCE[which(tor_incident_attr2011$INJURIES>0)])
 
-as.data.frame(tor_incident_attr2011$EST_LOSS[which(tor_incident_attr2011$INJURIES>0)])
+
+
+
+##### ESTIMATED LOSS WHEN INJURY HAPPENED DURING FIRE EVENT
+as.data.frame(tor_incident_attr2011$EST_LOSS[which(tor_incident_attr2011$INJURIES>0 & tor_incident_attr2011$EVENT_TYPE != "Medical")])
+
+injury_loss <- c(sum(as.numeric(
+  as.character(
+    tor_incident_attr2011$EST_LOSS[which(
+      tor_incident_attr2011$INJURIES>0 & tor_incident_attr2011$EVENT_TYPE != "Medical"
+    )]
+  )
+)
+),
+sum(as.numeric(
+  as.character(
+    tor_incident_attr2012$EST_LOSS[which(
+      tor_incident_attr2012$INJURIES>0 & tor_incident_attr2012$EVENT_TYPE != "Medical"
+    )]
+  )
+)
+),
+sum(as.numeric(
+  as.character(
+    tor_incident_attr2013$EST_LOSS[which(
+      tor_incident_attr2013$INJURIES>0 & tor_incident_attr2013$EVENT_TYPE != "Medical"
+    )]
+  )
+)
+),
+sum(as.numeric(
+  as.character(
+    tor_incident_attr2014$EST_LOSS[which(
+      tor_incident_attr2014$INJURIES>0 & tor_incident_attr2014$EVENT_TYPE != "Medical"
+    )]
+  )
+)
+),
+sum(as.numeric(
+  as.character(
+    tor_incident_attr2015$EST_LOSS[which(
+      tor_incident_attr2015$INJURIES>0 & tor_incident_attr2015$EVENT_TYPE != "Medical"
+    )]
+  )
+)
+),
+sum(as.numeric(
+  as.character(
+    tor_incident_attr2016$EST_LOSS[which(
+      tor_incident_attr2016$INJURIES>0 & tor_incident_attr2016$EVENT_TYPE != "Medical"
+    )]
+  )
+)
+))
+
+sum(injury_loss)
+
+##### correlation test between estimated loss and injury totals
 
 ####################################################################################################
 ####################################################################################################
@@ -293,6 +354,8 @@ as.data.frame(tor_incident_attr2011$EST_LOSS[which(tor_incident_attr2011$INJURIE
 
 ########### Proof that there is money in prevention
 ########### these are only cases with injuries or death
+########### includes medical calls
+
 sum(
   sum(as.numeric(as.character(tor_incident_attr2011$EST_LOSS[which(tor_incident_attr2011$INJURIES>0)]))),
   sum(as.numeric(as.character(tor_incident_attr2012$EST_LOSS[which(tor_incident_attr2012$INJURIES>0)]))),
@@ -313,28 +376,32 @@ as.data.frame(table(tor_incident_attr2011$MAIN_STREET[which(tor_incident_attr201
 plot(tor_incident_attr2011$DISPATCH_TIME, col = ifelse(tor_incident_attr2011$INJURIES > 0,'red','green'), ylim = c(0, 1000))
 
 plot(tor_incident_attr2011$DISPATCH_TIME[which(tor_incident_attr2011$EVENT_TYPE!= "Medical")], 
-     ylab = "time on non medical incidents" , 
+     main = "Dispatch time on non medical incidents 2011",
+     ylab = "Dispatch time" , 
      col = ifelse(tor_incident_attr2011$INJURIES > 0,'red','green'),
      pch= ifelse(tor_incident_attr2011$INJURIES > 0,'-','.'), 
      ylim = c(0, 1000)
      )
 
 plot(tor_incident_attr2012$DISPATCH_TIME[which(tor_incident_attr2012$EVENT_TYPE!= "Medical")], 
-     ylab = "time on non medical incidents" , 
+     main = "Dispatch time on non medical incidents 2012",
+     ylab = "Dispatch time" ,
      col = ifelse(tor_incident_attr2012$INJURIES > 0,'red','green'),
      pch= ifelse(tor_incident_attr2012$INJURIES > 0,'-','.'), 
      ylim = c(0, 1000)
      
 )
 plot(tor_incident_attr2013$DISPATCH_TIME[which(tor_incident_attr2013$EVENT_TYPE!= "Medical")], 
-     ylab = "time on non medical incidents" , 
+     main = "Dispatch time on non medical incidents 2013",
+     ylab = "Dispatch time" ,
      col = ifelse(tor_incident_attr2013$INJURIES > 0,'red','green'),
      pch= ifelse(tor_incident_attr2013$INJURIES > 0,'-','.'), 
      ylim = c(0, 1000)
 )
 
 plot(tor_incident_attr2014$DISPATCH_TIME[which(tor_incident_attr2014$EVENT_TYPE!= "Medical")], 
-     ylab = "time on non medical incidents" , 
+     main = "Dispatch time on non medical incidents 2014",
+     ylab = "Dispatch time" ,
      col = ifelse(tor_incident_attr2014$INJURIES > 0,'red','green'),
      pch= ifelse(tor_incident_attr2014$INJURIES > 0,'-','.'), 
      ylim = c(0, 1000)
@@ -342,24 +409,82 @@ plot(tor_incident_attr2014$DISPATCH_TIME[which(tor_incident_attr2014$EVENT_TYPE!
 )
 
 plot(tor_incident_attr2015$DISPATCH_TIME[which(tor_incident_attr2015$EVENT_TYPE!= "Medical")], 
-     ylab = "time on non medical incidents" , 
+     main = "Dispatch time on non medical incidents 2015",
+     ylab = "Dispatch time" ,
      col = ifelse(tor_incident_attr2015$INJURIES > 0,'red','green'),
      pch= ifelse(tor_incident_attr2015$INJURIES > 0,'-','.'), 
      ylim = c(0, 1000)
      
 )
 
-plot(tor_incident_attr2016$DISPATCH_TIME[which(tor_incident_attr2016$EVENT_TYPE!= "Medical")], 
-     ylab = "time on non medical incidents" , 
+plot(tor_incident_attr2016$DISPATCH_TIME[which(tor_incident_attr2016$EVENT_TYPE!= "Medical")],
+     main = "Dispatch time on non medical incidents 2016",
+     ylab = "Dispatch time" ,
      col = ifelse(tor_incident_attr2016$INJURIES > 0,'red','green'),
      pch= ifelse(tor_incident_attr2016$INJURIES > 0,'-','.'), 
      ylim = c(0, 1000)
      
 )
 
-cor.test(as.numeric(tor_incident_attr2011$DISPATCH_TIME), as.numeric(tor_incident_attr2012$DISPATCH_TIME))
+##### Dispatch time changes between each year hypothesys testing
+##### H0: The means of dispatch time haven't changed over the years
+##### Ha: The means of dispatch time have changed over the years
+t.test(as.numeric(tor_incident_attr2011$DISPATCH_TIME), 
+       as.numeric(tor_incident_attr2012$DISPATCH_TIME[1:length(tor_incident_attr2011$DISPATCH_TIME)]), 
+       alternative = "two.sided", 
+       conf.level = 0.95)
 
-####################################################################################################
+pt(4.2198,df = 230330) #### 0.9999878 
+alpha <- 0.05
+t.half.alpha <- qt(1-alpha/2, df = 230330)
+c(-t.half.alpha,t.half.alpha) ##### -1.959974  1.959974
+#### T-value falls outside the Accept zone tktkt
+
+##### injury changes between each year hypothesys testing
+##### H0: The means of injury haven't changed over the years
+##### Ha: The means of injury time have changed over the years
+t.test(as.numeric(tor_incident_attr2011$INJURIES), 
+       as.numeric(tor_incident_attr2012$INJURIES[1:length(tor_incident_attr2011$INJURIES)]), 
+       alternative = "two.sided", 
+       conf.level = 0.95)
+
+pt(-3.0176,df = 233110) #### 0.001274062 
+alpha <- 0.05
+t.half.alpha <- qt(1-alpha/2, df = 233110)
+c(-t.half.alpha,t.half.alpha) ##### -1.959974  1.959974
+#### T-value falls outside the H0 Acceptance zone 
+
+#######dispatch time means per year into a dta frame
+dispatch_means <- c(mean(as.numeric(tor_incident_attr2011$DISPATCH_TIME), na.rm = TRUE),
+                    mean(as.numeric(tor_incident_attr2012$DISPATCH_TIME), na.rm = TRUE),
+                    mean(as.numeric(tor_incident_attr2013$DISPATCH_TIME), na.rm = TRUE),
+                    mean(as.numeric(tor_incident_attr2014$DISPATCH_TIME), na.rm = TRUE),
+                    mean(as.numeric(tor_incident_attr2015$DISPATCH_TIME), na.rm = TRUE),
+                    mean(as.numeric(tor_incident_attr2016$DISPATCH_TIME), na.rm = TRUE)
+                    )
+
+####### above data frame is paired to this one
+###### injury incident total (this is not total injuries)
+injury_totals <- c(sum(tor_incident_attr2011$INJURIES, na.rm = TRUE),
+                   sum(tor_incident_attr2012$INJURIES, na.rm = TRUE),
+                   sum(tor_incident_attr2013$INJURIES, na.rm = TRUE),
+                   sum(tor_incident_attr2014$INJURIES, na.rm = TRUE),
+                   sum(tor_incident_attr2015$INJURIES, na.rm = TRUE),
+                   sum(tor_incident_attr2016$INJURIES, na.rm = TRUE)
+                   )
+
+
+cor.test(injury_totals,dispatch_means)
+
+##### test of correlation between dispatch time mean and incident with injury
+t.test(injury_totals,dispatch_means, method = "Paired") #### t = -14.229
+pt(-14.229,df = 5) #### 1.544151e-05 
+alpha <- 0.05
+t.half.alpha <- qt(1-alpha/2, df = 5)
+c(-t.half.alpha,t.half.alpha) ##### -2.570582  2.570582
+#### T-value falls outside the H0 Acceptance zone
+
+ ####################################################################################################
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
