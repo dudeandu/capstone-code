@@ -1,7 +1,16 @@
 ## install.packages("XML")
 ## install.packages("dplyr")
+## install.packages("pcalg")
+## install.packages("plotly")
+source("https://bioconductor.org/biocLite.R")
+biocLite("graph")
+biocLite("RBGL")
+biocLite("Rgraphviz")
+## install.packages("graph")
 require(XML)
 require(dplyr)
+library(pcalg)
+library(plotly)
 
 setwd("C:/Users/dudea/Desktop/Ryerson/CKME 136 Capstone Project/data analisys surface/fireFighters/data/TFS_OPEN_DATA-2011-2016")
 
@@ -261,8 +270,9 @@ for (i in 1:nrow(nonmed_injury_freq)){
 summary(nonmed_injury_freq$PERCENTAGE_INJURY)
 plot(nonmed_injury_freq$PERCENTAGE_INJURY)
 
-arrange(nonmed_injury_freq, desc(INCIDENTS)) #<<<<<<<<<<<<<<<<<<< SHOW THIS GUY IN A CHART
-plot(nonmed_injury_freq$PERCENTAGE_INJURY)
+arrange(nonmed_injury_freq, desc(INJURIES)) #<<<<<<<<<<<<<<<<<<< SHOW THIS GUY IN A CHART
+plot(x = nonmed_injury_freq$INJURIES, main= "Total Injuries per event type", xlab = "Event Type", ylab = "Total Injuries")
+plot(nonmed_injury_freq$PERCENTAGE_INJURY, ylab = "Percentages", main = "Percentage injury per EVENT TYPE")
 
 write.csv(arrange(nonmed_injury_freq, desc(INCIDENTS)), "nonmed_injury_freq_by_event_type.csv")
 
@@ -483,6 +493,16 @@ alpha <- 0.05
 t.half.alpha <- qt(1-alpha/2, df = 5)
 c(-t.half.alpha,t.half.alpha) ##### -2.570582  2.570582
 #### T-value falls outside the H0 Acceptance zone
+
+
+####################################################################################################
+####################################################################################################
+####################################################################################################
+####################################################################################################
+############# Causes
+arrange(as.data.frame(table(nonmedical_cases$IGNITION_SOURCE[which(nonmedical_cases$INJURIES>0)])), desc(Freq))
+arrange(as.data.frame(table(nonmedical_cases$POSSIBLE_CAUSE[which(nonmedical_cases$INJURIES>0)])), desc(Freq))
+
 
  ####################################################################################################
 ####################################################################################################
